@@ -1,28 +1,34 @@
-# Laravel Moderation [![Build Status](https://travis-ci.org/hootlex/laravel-moderation.svg?branch=v1.0.5)](https://travis-ci.org/hootlex/laravel-moderation) [![Version](https://img.shields.io/packagist/v/hootlex/laravel-moderation.svg?style=flat)](https://packagist.org/packages/hootlex/laravel-moderation)  [![Software License](https://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat)](LICENSE)
+# Laravel Moderation
+
 A simple Moderation System for Laravel 5.* that allows you to Approve or Reject resources like posts, comments, users, etc.
 
 Keep your application pure by preventing offensive, irrelevant, or insulting content.
 
-##Possible Use Case
+## 修改说明
 
-1. User creates a resource (a post, a comment or any Eloquent Model).
-2. The resource is pending and invisible in website (ex. `Post::all()` returns only approved posts).
-3. Admin/Moderator/etc decides if the resource will be approved or rejected.
+移除 Status 类，修改为读取 config 配置获取 status，增强扩展性。
 
-  1. **Approved**: Resource is now public and queryable.
-  2. **Rejected**: Resource will be excluded from all queries. Rejected resources will be returned only if you scope a query to include them. (scope: `withRejected`)
+## 安装
 
-4. You application is clean.
+1). 修改 `composer.json`, 在 `repositories` 数组内追加如下数据
 
-##Installation
-
-First, install the package through Composer.
-
-```php
-composer require hootlex/laravel-moderation
+```
+    "repositories": [
+        ...
+        {
+            "type": "vcs",
+            "url":  "https://github.com/estgroupe-ext/laravel-moderation.git"
+        }
+    ]
 ```
 
-Then include the service provider inside `config/app.php`.
+2). 添加 `hootlex/laravel-moderation`
+
+```shell
+composer require estgroupe-ext/laravel-moderation
+```
+
+3). 修改 `config/app.php`, 在 `providers` 数组内追加如下数据
 
 ```php
 'providers' => [
@@ -31,26 +37,8 @@ Then include the service provider inside `config/app.php`.
     ...
 ];
 ```
-Lastly you publish the config file.
 
-```
-php artisan vendor:publish --provider="Hootlex\Moderation\ModerationServiceProvider" --tag=config
-```
-
-
-## Setup the Model(s)
-
-To enable moderation for a model, use the `Hootlex\Moderation\Moderatable` trait on the model and add the `status`, `moderated_by` and `moderated_at` columns to your model's table.
-```php
-use Hootlex\Moderation\Moderatable;
-class Post extends Model
-{
-    use Moderatable;
-    ...
-}
-```
-
-Create a migration to add the new columns. [(You can use custom names for the moderation columns)](#configuration)
+4). 生成 migrations, 使其包含 `status` 字段
 
 Example Migration:
 ```php
@@ -64,7 +52,12 @@ class AddModeratioColumnsToPostsTable extends Migration
     public function up()
     {
         Schema::table('posts', function (Blueprint $table) {
-            $table->smallInteger('status')->default(0);
+            $table->enum('status', [
+                config('moderation.status.pending'),
+                config('moderation.status.approved'),
+                config('moderation.status.rejected'),
+                config('moderation.status.postponed')
+            ])->default(config('moderation.status.pending'))
             $table->dateTime('moderated_at')->nullable();
             //If you want to track who moderated the Model add 'moderated_by' too.
             //$table->integer('moderated_by')->nullable()->unsigned();
@@ -88,105 +81,124 @@ class AddModeratioColumnsToPostsTable extends Migration
 }
 ```
 
-**You are ready to go!**
+5). 更新 Eloquent Models
 
-##Usage
-> **Note:** In next examples I will use Post model to demonstrate how the query builder works. You can Moderate any Eloquent Model, even User. 
-
-###Moderate Models
-You can moderate a model by referencing it's id.
 ```php
+use Hootlex\Moderation\Moderatable;
+class Post extends Model
+{
+    use Moderatable;
+    ...
+}
+```
+
+## 使用
+
+接下来我们将以 Post 模型来作为使用范例，来说明如何使用这个 Package.
+
+### 文章审核
+
+```php
+// 发布此文章
 Post::approve($post->id);
 
+// 拒绝此文章
 Post::reject($post->id);
 ```
-Or by making a query.
+
+或者你也可以通过以下方式对文章进行审核。
+
 ```php
 Post::where('title', 'Horse')->approve();
 
 Post::where('title', 'Horse')->reject();
 ```
 
-###Query Models
-By default only Approved models will be returned on queries. To change this behavior check the [configuration](#configuration).
+## 文章查询
 
-#####To query the Approved Posts, run your queries as always.
+### 已发布文章查询
+
 ```php
-//it will return all Approved Posts
+// 返回所有允许发布的文章
 Post::all();
 
-//it will return Approved Posts where title is Horse
+// 返回 title 为 Horse 并且允许发布的文章
 Post::where('title', 'Horse')->get();
 ```
-#####Query pending or rejected models.
+
+### 待审核、被拒绝的文章查询
+
 ```php
-//it will return all Pending Posts
+// 返回待审核的文章
 Post::pending()->get();
 
-//it will return all Rejected Posts
+// 返回被拒绝的文章
 Post::rejected()->get();
 
-//it will return Approved and Pending Posts
+// 返回已发布和待审核的文章
 Post::withPending()->get();
 
-//it will return Approved and Rejected Posts
+// 返回已发布和被拒绝的文章
 Post::withRejected()->get();
 ```
-#####Query ALL models
+
+### 查询所有文章
 ```php
-//it will return all Posts
+// 返回所有文章
 Post::withAnyStatus()->get();
 
-//it will return all Posts where title is Horse
+// 返回 title 为 Horse 的所有文章
 Post::withAnyStatus()->where('title', 'Horse')->get();
 ```
 
-###Model Status
-To check the status of a model there are 3 helper methods which return a boolean value.
+### 查询文章状态
+
 ```php
-//check if a model is pending
+// 判断文章是否是待审核状态
 $post->isPending();
 
-//check if a model is approved
+// 判断文章是否是已发布状态
 $post->isApproved();
 
-//check if a model is rejected
+// 判断文章是否是被拒绝状态
 $post->isRejected();
 ```
 
-##Strict Moderation
-Strict Moderation means that only Approved resource will be queried. To query Pending resources along with Approved you have to disable Strict Moderation. See how you can do this in the [configuration](#configuration).
+## 配置
 
-##Configuration
+### 全局配置
 
-###Global Configuration
-To configuration Moderation package globally you have to edit `config/moderation.php`.
-Inside `moderation.php` you can configure the following:
+你可以通过修改项目 `config/moderation.php` 的方式来进行个性化定制
 
-1. `status_column` represents the default column 'status' in the database. 
-2. `moderated_at_column` represents the default column 'moderated_at' in the database.
-2. `moderated_by_column` represents the default column 'moderated_by' in the database.
-3. `strict` represents [*Strict Moderation*](#strict-moderation).
+1. `status_column` 数据库中的状态列名称。
+2. `moderated_at_column` 数据库中文章审核时间列名称。
+2. `moderated_by_column` 数据库中文章审核者列名称。
+3. `strict` 是否启用严格模式，默认为严格模式，对所有查询只返回允许发布的文章，关闭严格模式的情况下则同时返回允许发布的文章和待审核的文章。
 
-###Model Configuration
-Inside your Model you can define some variables to overwrite **Global Settings**.
+### Model 配置
 
-To overwrite `status` column define:
+在 Model 中，你可以通过定义一些变量来改写全局配置
+
+改写 `status` 列名称
+
 ```php
 const MODERATION_STATUS = 'moderation_status';
 ```
 
-To overwrite `moderated_at` column define:
+改写 `moderated_at` 列名称
+
 ```php
 const MODERATED_AT = 'mod_at';
 ```
 
-To overwrite `moderated_by` column define:
+改写 `moderated_by` 列名称
+
 ```php
 const MODERATED_BY = 'mod_by';
 ```
 
-To enable or disable [Strict Moderation](#strict-moderation):
+开启或关闭严格模式
+
 ```php
 public static $strictModeration = true;
 ```
