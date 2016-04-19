@@ -57,7 +57,7 @@ class AddModeratioColumnsToPostsTable extends Migration
                 config('moderation.status.approved'),
                 config('moderation.status.rejected'),
                 config('moderation.status.postponed')
-            ])->default(config('moderation.status.pending'))
+            ])->default(config('moderation.status.pending'));
             $table->dateTime('moderated_at')->nullable();
             //If you want to track who moderated the Model add 'moderated_by' too.
             //$table->integer('moderated_by')->nullable()->unsigned();
