@@ -130,7 +130,7 @@ trait Moderatable
      */
     public function isApproved()
     {
-        return $this->{$this->getStatusColumn()} == Status::APPROVED;
+        return $this->{$this->getStatusColumn()} == config('moderation.status.approved');
     }
 
     /**
@@ -140,7 +140,7 @@ trait Moderatable
      */
     public function isRejected()
     {
-        return $this->{$this->getStatusColumn()} == Status::REJECTED;
+        return $this->{$this->getStatusColumn()} == config('moderation.status.rejected');
     }
 
     /**
@@ -150,7 +150,7 @@ trait Moderatable
      */
     public function isPostponed()
     {
-        return $this->{$this->getStatusColumn()} == Status::POSTPONED;
+        return $this->{$this->getStatusColumn()} == config('moderation.status.postponed');
     }
 
     /**
@@ -160,7 +160,7 @@ trait Moderatable
      */
     public function isPending()
     {
-        return $this->{$this->getStatusColumn()} == Status::PENDING;
+        return $this->{$this->getStatusColumn()} == config('moderation.status.pending');
     }
 
     /**

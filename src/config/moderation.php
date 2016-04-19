@@ -34,4 +34,11 @@ return array(
     | as well.
     */
     'strict' => true,
+
+    'status' => [
+        'pending' => 'pending',
+        'approved' => 'approved',
+        'rejected' => 'rejected',
+        'postponed' => 'postponed'
+    ],
 );

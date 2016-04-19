@@ -1,6 +1,5 @@
 <?php
 
-use Hootlex\Moderation\Status;
 use Hootlex\Moderation\Tests\Post;
 use Illuminate\Foundation\Testing\WithoutMiddleware;
 use Illuminate\Foundation\Testing\DatabaseMigrations;

@@ -43,9 +43,9 @@ class ModerationScope implements ScopeInterface
             : config('moderation.strict');
 
         if ($strict) {
-            $builder->where($model->getQualifiedStatusColumn(), '=', Status::APPROVED);
+            $builder->where($model->getQualifiedStatusColumn(), '=', config('moderation.status.approved'));
         } else {
-            $builder->whereIn($model->getStatusColumn(), [Status::APPROVED, Status::PENDING]);
+            $builder->whereIn($model->getStatusColumn(), [config('moderation.status.approved'), config('moderation.status.pending')]);
         }
 
         $this->extend($builder);
@@ -119,7 +119,7 @@ class ModerationScope implements ScopeInterface
         $builder->macro('withPending', function (Builder $builder) {
             $this->remove($builder, $builder->getModel());
 
-            return $builder->whereIN($this->getStatusColumn($builder), [Status::APPROVED, Status::PENDING]);
+            return $builder->whereIN($this->getStatusColumn($builder), [config('moderation.status.approved'), config('moderation.status.pending')]);
         });
     }
 
@@ -136,7 +136,7 @@ class ModerationScope implements ScopeInterface
             $this->remove($builder, $builder->getModel());
 
             return $builder->whereIN($this->getStatusColumn($builder),
-                [Status::APPROVED, Status::REJECTED]);
+                [config('moderation.status.approved'), config('moderation.status.rejected')]);
         });
     }
 
@@ -153,7 +153,7 @@ class ModerationScope implements ScopeInterface
             $this->remove($builder, $builder->getModel());
 
             return $builder->whereIN($this->getStatusColumn($builder),
-                [Status::APPROVED, Status::POSTPONED]);
+                [config('moderation.status.approved'), config('moderation.status.postponed')]);
         });
     }
 
@@ -186,7 +186,7 @@ class ModerationScope implements ScopeInterface
 
             $this->remove($builder, $model);
 
-            $builder->where($model->getQualifiedStatusColumn(), '=', Status::PENDING);
+            $builder->where($model->getQualifiedStatusColumn(), '=', config('moderation.status.pending'));
 
             return $builder;
         });
@@ -206,7 +206,7 @@ class ModerationScope implements ScopeInterface
 
             $this->remove($builder, $model);
 
-            $builder->where($model->getQualifiedStatusColumn(), '=', Status::REJECTED);
+            $builder->where($model->getQualifiedStatusColumn(), '=', config('moderation.status.rejected'));
 
             return $builder;
         });
@@ -226,7 +226,7 @@ class ModerationScope implements ScopeInterface
 
             $this->remove($builder, $model);
 
-            $builder->where($model->getQualifiedStatusColumn(), '=', Status::POSTPONED);
+            $builder->where($model->getQualifiedStatusColumn(), '=', config('moderation.status.postponed'));
 
             return $builder;
         });
@@ -243,7 +243,7 @@ class ModerationScope implements ScopeInterface
     {
         $builder->macro('approve', function (Builder $builder, $id = null) {
             $builder->withAnyStatus();
-            return $this->updateModerationStatus($builder, $id, Status::APPROVED);
+            return $this->updateModerationStatus($builder, $id, config('moderation.status.approved'));
         });
     }
 
@@ -258,7 +258,7 @@ class ModerationScope implements ScopeInterface
     {
         $builder->macro('reject', function (Builder $builder, $id = null) {
             $builder->withAnyStatus();
-            return $this->updateModerationStatus($builder, $id, Status::REJECTED);
+            return $this->updateModerationStatus($builder, $id, config('moderation.status.rejected'));
 
         });
     }
@@ -274,7 +274,7 @@ class ModerationScope implements ScopeInterface
     {
         $builder->macro('postpone', function (Builder $builder, $id = null) {
             $builder->withAnyStatus();
-            return $this->updateModerationStatus($builder, $id, Status::POSTPONED);
+            return $this->updateModerationStatus($builder, $id, config('moderation.status.postponed'));
         });
     }
 

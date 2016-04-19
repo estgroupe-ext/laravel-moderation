@@ -1,7 +1,6 @@
 <?php
 
 use Hootlex\Moderation\ModerationScope;
-use Hootlex\Moderation\Status;
 use Hootlex\Moderation\Tests\Post;
 use Illuminate\Foundation\Testing\WithoutMiddleware;
 use Illuminate\Foundation\Testing\DatabaseMigrations;
@@ -32,60 +31,60 @@ class ModerationScopeTest extends BaseTestCase
     /** @test */
     public function it_returns_only_approved_stories()
     {
-        $this->createPost([$this->status_column => Status::APPROVED], 5);
+        $this->createPost([$this->status_column => config('moderation.status.approved')], 5);
         $posts = Post::all();
         $this->assertNotEmpty($posts);
         foreach ($posts as $post) {
-            $this->assertEquals(Status::APPROVED, $post->{$this->status_column});
+            $this->assertEquals(config('moderation.status.approved'), $post->{$this->status_column});
         }
     }
 
     /** @test */
     public function it_returns_only_rejected_stories()
     {
-        $this->createPost([$this->status_column => Status::REJECTED], 5);
+        $this->createPost([$this->status_column => config('moderation.status.rejected')], 5);
 
         $posts = (new Post)->newQueryWithoutScope(new ModerationScope)->rejected()->get();
 
         $this->assertNotEmpty($posts);
 
         foreach ($posts as $post) {
-            $this->assertEquals(Status::REJECTED, $post->{$this->status_column});
+            $this->assertEquals(config('moderation.status.rejected'), $post->{$this->status_column});
         }
     }
 
     /** @test */
     public function it_returns_only_pending_stories()
     {
-        $this->createPost([$this->status_column => Status::PENDING], 5);
+        $this->createPost([$this->status_column => config('moderation.status.pending')], 5);
 
         $posts = (new Post)->newQueryWithoutScope(new ModerationScope)->pending()->get();
 
         $this->assertNotEmpty($posts);
 
         foreach ($posts as $post) {
-            $this->assertEquals(Status::PENDING, $post->{$this->status_column});
+            $this->assertEquals(config('moderation.status.pending'), $post->{$this->status_column});
         }
     }
 
     /** @test */
     public function it_returns_only_postponed_stories()
     {
-        $this->createPost([$this->status_column => Status::POSTPONED], 5);
+        $this->createPost([$this->status_column => config('moderation.status.postponed')], 5);
 
         $posts = (new Post)->newQueryWithoutScope(new ModerationScope)->postponed()->get();
 
         $this->assertNotEmpty($posts);
 
         foreach ($posts as $post) {
-            $this->assertEquals(Status::POSTPONED, $post->{$this->status_column});
+            $this->assertEquals(config('moderation.status.postponed'), $post->{$this->status_column});
         }
     }
 
     /** @test */
     public function it_returns_stories_including_pending_ones()
     {
-        $this->createPost([$this->status_column => Status::PENDING], 5);
+        $this->createPost([$this->status_column => config('moderation.status.pending')], 5);
 
         $posts = (new Post)->newQueryWithoutScope(new ModerationScope)->withPending()->get();
 
@@ -95,14 +94,14 @@ class ModerationScopeTest extends BaseTestCase
         $this->assertTrue($posts > Post::all());
 
         foreach ($posts as $post) {
-            $this->assertTrue(($post->{$this->status_column} == Status::APPROVED || $post->{$this->status_column} == Status::PENDING));
+            $this->assertTrue(($post->{$this->status_column} == config('moderation.status.approved') || $post->{$this->status_column} == config('moderation.status.pending')));
         }
     }
 
     /** @test */
     public function it_returns_stories_including_rejected_ones()
     {
-        $this->createPost([$this->status_column => Status::REJECTED], 5);
+        $this->createPost([$this->status_column => config('moderation.status.rejected')], 5);
 
         $posts = (new Post)->newQueryWithoutScope(new ModerationScope)->withRejected()->get();
 
@@ -112,14 +111,14 @@ class ModerationScopeTest extends BaseTestCase
         $this->assertTrue($posts > Post::all());
 
         foreach ($posts as $post) {
-            $this->assertTrue(($post->{$this->status_column} == Status::APPROVED || $post->{$this->status_column} == Status::REJECTED));
+            $this->assertTrue(($post->{$this->status_column} == config('moderation.status.approved') || $post->{$this->status_column} == config('moderation.status.rejected')));
         }
     }
 
     /** @test */
     public function it_returns_stories_including_postponed_ones()
     {
-        $this->createPost([$this->status_column => Status::POSTPONED], 5);
+        $this->createPost([$this->status_column => config('moderation.status.postponed')], 5);
 
         $posts = (new Post)->newQueryWithoutScope(new ModerationScope)->withPostponed()->get();
 
@@ -129,7 +128,7 @@ class ModerationScopeTest extends BaseTestCase
         $this->assertTrue($posts > Post::all());
 
         foreach ($posts as $post) {
-            $this->assertTrue(($post->{$this->status_column} == Status::APPROVED || $post->{$this->status_column} == Status::POSTPONED));
+            $this->assertTrue(($post->{$this->status_column} == config('moderation.status.approved') || $post->{$this->status_column} == config('moderation.status.postponed')));
         }
     }
 
@@ -151,53 +150,53 @@ class ModerationScopeTest extends BaseTestCase
     /** @test */
     public function it_approves_stories()
     {
-        $posts = $this->createPost([$this->status_column => Status::PENDING], 4);
+        $posts = $this->createPost([$this->status_column => config('moderation.status.pending')], 4);
         $postsIds = $posts->lists('id')->all();
 
         (new Post)->newQueryWithoutScope(new ModerationScope)->whereIn('id', $postsIds)->approve();
 
         foreach ($postsIds as $postId) {
-            $this->seeInDatabase('posts', ['id' => $postId, $this->status_column => Status::APPROVED]);
+            $this->seeInDatabase('posts', ['id' => $postId, $this->status_column => config('moderation.status.approved')]);
         }
     }
 
     /** @test */
     public function it_rejects_stories()
     {
-        $posts = $this->createPost([$this->status_column => Status::PENDING], 4);
+        $posts = $this->createPost([$this->status_column => config('moderation.status.pending')], 4);
         $postsIds = $posts->lists('id')->all();
 
         (new Post)->newQueryWithoutScope(new ModerationScope)->whereIn('id', $postsIds)->reject();
 
         foreach ($postsIds as $postId) {
-            $this->seeInDatabase('posts', ['id' => $postId, $this->status_column => Status::REJECTED]);
+            $this->seeInDatabase('posts', ['id' => $postId, $this->status_column => config('moderation.status.rejected')]);
         }
     }
 
     /** @test */
     public function it_postpones_stories()
     {
-        $posts = $this->createPost([$this->status_column => Status::PENDING], 4);
+        $posts = $this->createPost([$this->status_column => config('moderation.status.pending')], 4);
         $postsIds = $posts->lists('id')->all();
 
         (new Post)->newQueryWithoutScope(new ModerationScope)->whereIn('id', $postsIds)->postpone();
 
         foreach ($postsIds as $postId) {
-            $this->seeInDatabase('posts', ['id' => $postId, $this->status_column => Status::POSTPONED]);
+            $this->seeInDatabase('posts', ['id' => $postId, $this->status_column => config('moderation.status.postponed')]);
         }
     }
 
     /** @test */
     public function it_approves_a_story_by_id()
     {
-        $post = $this->createPost([$this->status_column => Status::PENDING]);
+        $post = $this->createPost([$this->status_column => config('moderation.status.pending')]);
 
         (new Post)->newQueryWithoutScope(new ModerationScope)->approve($post->id);
 
         $this->seeInDatabase('posts',
             [
                 'id' => $post->id,
-                $this->status_column => Status::APPROVED,
+                $this->status_column => config('moderation.status.approved'),
                 $this->moderated_at_column => \Carbon\Carbon::now()
             ]);
     }
@@ -205,14 +204,14 @@ class ModerationScopeTest extends BaseTestCase
     /** @test */
     public function it_rejects_a_story_by_id()
     {
-        $post = $this->createPost([$this->status_column => Status::PENDING]);
+        $post = $this->createPost([$this->status_column => config('moderation.status.pending')]);
 
         (new Post)->newQueryWithoutScope(new ModerationScope)->reject($post->id);
 
         $this->seeInDatabase('posts',
             [
                 'id' => $post->id,
-                $this->status_column => Status::REJECTED,
+                $this->status_column => config('moderation.status.rejected'),
                 $this->moderated_at_column => \Carbon\Carbon::now()
             ]);
     }
@@ -220,14 +219,14 @@ class ModerationScopeTest extends BaseTestCase
     /** @test */
     public function it_postpones_a_story_by_id()
     {
-        $post = $this->createPost([$this->status_column => Status::PENDING]);
+        $post = $this->createPost([$this->status_column => config('moderation.status.pending')]);
 
         (new Post)->newQueryWithoutScope(new ModerationScope)->postpone($post->id);
 
         $this->seeInDatabase('posts',
             [
                 'id' => $post->id,
-                $this->status_column => Status::POSTPONED,
+                $this->status_column => config('moderation.status.postponed'),
                 $this->moderated_at_column => \Carbon\Carbon::now()
             ]);
     }
